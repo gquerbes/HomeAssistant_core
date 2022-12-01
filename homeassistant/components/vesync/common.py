@@ -6,7 +6,7 @@ from pyvesync.vesyncbasedevice import VeSyncBaseDevice
 
 from homeassistant.helpers.entity import DeviceInfo, Entity, ToggleEntity
 
-from .const import DOMAIN, VS_FANS, VS_LIGHTS, VS_SENSORS, VS_SWITCHES
+from .const import DOMAIN, VS_FANS, VS_HUMIDIFIERS, VS_LIGHTS, VS_SENSORS, VS_SWITCHES
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,11 +18,16 @@ async def async_process_devices(hass, manager):
     devices[VS_FANS] = []
     devices[VS_LIGHTS] = []
     devices[VS_SENSORS] = []
+    devices[VS_HUMIDIFIERS] = []
 
     await hass.async_add_executor_job(manager.update)
 
     if manager.fans:
-        devices[VS_FANS].extend(manager.fans)
+        for fan in manager.fans:
+            if fan.device_name != "safd":
+                devices[VS_HUMIDIFIERS].append(fan)
+            else:
+                devices[VS_FANS].append(fan)
         # Expose fan sensors separately
         devices[VS_SENSORS].extend(manager.fans)
         _LOGGER.info("%d VeSync fans found", len(manager.fans))
@@ -110,3 +115,7 @@ class VeSyncDevice(VeSyncBaseEntity, ToggleEntity):
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the device off."""
         self.device.turn_off()
+
+    def turn_on(self, **kwargs: Any) -> None:
+        """Turn the device off."""
+        self.device.turn_on()

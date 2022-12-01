@@ -9,6 +9,7 @@ VS_FANS = "fans"
 VS_LIGHTS = "lights"
 VS_SENSORS = "sensors"
 VS_MANAGER = "manager"
+VS_HUMIDIFIERS = "humidifiers"
 
 DEV_TYPE_TO_HA = {
     "wifi-switch-1.3": "outlet",
@@ -36,4 +37,6 @@ SKU_TO_BASE_DEVICE = {
     "LAP-C601S-WUS": "Core600S",  # Alt ID Model Core600S
     "LAP-C601S-WUSR": "Core600S",  # Alt ID Model Core600S
     "LAP-C601S-WEU": "Core600S",  # Alt ID Model Core600S
+    "Classic300S": "Classic300S",
+    "LUH-A601S-WUSB": "Classic300S",
 }
