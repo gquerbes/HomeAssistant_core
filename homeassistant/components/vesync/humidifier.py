@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from homeassistant.components.humidifier import HumidifierEntity
 from homeassistant.config_entries import ConfigEntry
@@ -20,9 +19,13 @@ DEV_TYPE_TO_HA = {
     "Classic200S": "humidifier",
 }
 
+
 FAN_MODE_AUTO = "auto"
 FAN_MODE_SLEEP = "sleep"
 FAN_MODE_MANUAL = "manual"
+
+MAX_HUMIDITY = 80
+MIN_HUMIDITY = 30
 
 PRESET_MODES = {
     "Classic300S": [FAN_MODE_AUTO, FAN_MODE_SLEEP, FAN_MODE_MANUAL],
@@ -67,6 +70,8 @@ def _setup_entities(devices, async_add_entities):
 class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
     """Representation of a VeSync humidifer."""
 
+    #  _attr_supported_features: HumidifierEntityFeature.MODES
+
     def __init__(self, humidifier):
         """Initialize the VeSync humidity device."""
         super().__init__(humidifier)
@@ -78,26 +83,34 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
         return self.smarthumidifier.uuid
 
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
-        """Return the state attributes of the fan."""
-        attr = {}
+    def target_humidity(self) -> int:
+        """Return the desired humidity set point."""
+        return int(self.smarthumidifier.auto_humidity)
 
-        if hasattr(self.smarthumidifier, "active_time"):
-            attr["active_time"] = self.smarthumidifier.active_time
+    @property
+    def max_humidity(self) -> int:
+        """Return the MAX humidity of this fan."""
+        return MAX_HUMIDITY
 
-        if hasattr(self.smarthumidifier, "screen_status"):
-            attr["screen_status"] = self.smarthumidifier.screen_status
+    @property
+    def min_humidity(self) -> int:
+        """Return the MIN humidity of this fan."""
+        return MIN_HUMIDITY
 
-        if hasattr(self.smarthumidifier, "child_lock"):
-            attr["child_lock"] = self.smarthumidifier.child_lock
+    @property
+    def mode(self) -> str | None:
+        """Return the mist level of this fan."""
+        return self.smarthumidifier.mist_level
 
-        if hasattr(self.smarthumidifier, "night_light"):
-            attr["night_light"] = self.smarthumidifier.night_light
+    @property
+    def available_modes(self) -> list[str] | None:
+        """Return the list of available modes."""
+        return [FAN_MODE_AUTO, FAN_MODE_MANUAL, FAN_MODE_SLEEP]
 
-        if hasattr(self.smarthumidifier, "mode"):
-            attr["mode"] = self.smarthumidifier.mode
-
-        return attr
+    @property
+    def device_class(self) -> str | None:
+        """Return the device class of this fan."""
+        return "DEVICE_CLASS_HUMIDIFIER"
 
     def set_humidity(self, humidity: int) -> None:
         """Set new target humidity."""
@@ -106,21 +119,6 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
         self.smarthumidifier.set_humidity(int(humidity))
 
         self.schedule_update_ha_state()
-
-    @property
-    def target_humidity(self) -> int:
-        """Return the desired humidity set point."""
-        return int(self.smarthumidifier.auto_humidity)
-
-    @property
-    def current_humidity(self) -> int | None:
-        """Return the current humidity."""
-        return 2
-
-    @property
-    def available_modes(self) -> list[str] | None:
-        """Return the list of available modes."""
-        return [FAN_MODE_AUTO, FAN_MODE_MANUAL, FAN_MODE_SLEEP]
 
     def set_mode(self, mode: str) -> None:
         """Set the preset mode of device."""
