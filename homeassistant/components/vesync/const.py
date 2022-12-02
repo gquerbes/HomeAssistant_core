@@ -10,6 +10,7 @@ VS_LIGHTS = "lights"
 VS_SENSORS = "sensors"
 VS_MANAGER = "manager"
 VS_HUMIDIFIERS = "humidifiers"
+VS_BINARY_SENSORS = "binary_sensors"
 
 DEV_TYPE_TO_HA = {
     "wifi-switch-1.3": "outlet",

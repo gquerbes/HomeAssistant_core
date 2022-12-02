@@ -181,7 +181,6 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
 
     def get_latest_info(self) -> None:
         """Get the latest info from the device."""
-        _LOGGER.warning(self.smarthumidifier.displayJSON())
         self.display_info = json.loads(self.smarthumidifier.displayJSON())
         self.last_known_mode = self.display_info.get("Mode")
         self.last_known_fan_speed = int(self.display_info["Mist Virtual Level"])
