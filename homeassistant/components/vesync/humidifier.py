@@ -1,6 +1,7 @@
 """Support for VeSync humidifiers."""
 from __future__ import annotations
 
+import json
 import logging
 
 from homeassistant.components.humidifier import (
@@ -36,7 +37,7 @@ MIN_FAN_SPEED = 0
 
 
 PRESET_MODES = {
-    "Classic300S": [FAN_MODE_AUTO, FAN_MODE_MANUAL],
+    "Classic300S": [FAN_MODE_AUTO, FAN_MODE_MANUAL, FAN_MODE_SLEEP],
 }
 
 
@@ -80,12 +81,15 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
 
     _attr_device_class = HumidifierDeviceClass.HUMIDIFIER
     _attr_supported_features = HumidifierEntityFeature.MODES
-    last_known_fan_speed = 0
+    last_known_fan_speed = 1
+    last_known_mode = ""
 
     def __init__(self, humidifier):
         """Initialize the VeSync humidity device."""
         super().__init__(humidifier)
         self.smarthumidifier = humidifier
+        # get info from json file
+        self.get_latest_info()
 
     @property
     def unique_info(self):
@@ -95,51 +99,61 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
     @property
     def target_humidity(self) -> int:
         """Return the desired humidity set point."""
-        if self.smarthumidifier.auto_enabled:
-            return int(self.smarthumidifier.auto_humidity)
-        return self.last_known_fan_speed
+        if self.last_known_mode == FAN_MODE_MANUAL:
+            self.get_latest_info()
+            return self.last_known_fan_speed
+        return int(self.smarthumidifier.auto_humidity)
 
     @property
     def max_humidity(self) -> int:
         """Return the MAX humidity of this fan."""
-        if self.smarthumidifier.auto_enabled:
-            return MAX_HUMIDITY
-        return MAX_FAN_SPEED
+        self.get_latest_info()
+        if self.last_known_mode == FAN_MODE_MANUAL:
+            return MAX_FAN_SPEED
+        return MAX_HUMIDITY
 
     @property
     def min_humidity(self) -> int:
         """Return the MIN humidity of this fan."""
-        if self.smarthumidifier.auto_enabled:
-            return MIN_HUMIDITY
-        return MIN_FAN_SPEED
+        self.get_latest_info()
+        if self.last_known_mode == FAN_MODE_MANUAL:
+            return MIN_FAN_SPEED
+        return MIN_HUMIDITY
 
     @property
     def mode(self) -> str | None:
-        """Return the mist level of this fan."""
+        """Return the mode of this fan."""
         if self.smarthumidifier.auto_enabled:
             return FAN_MODE_AUTO
-        return FAN_MODE_MANUAL
+
+        self.get_latest_info()
+        return self.last_known_mode
 
     @property
     def available_modes(self) -> list[str] | None:
         """Return the list of available modes."""
-        return [FAN_MODE_MANUAL, FAN_MODE_AUTO]
+        return [FAN_MODE_MANUAL, FAN_MODE_AUTO, FAN_MODE_SLEEP]
 
     @property
     def device_class(self) -> str | None:
         """Return the device class of this fan."""
         return "DEVICE_CLASS_HUMIDIFIER"
 
+    @property
+    def preset_modes(self) -> list[str]:
+        """Get the list of available preset modes."""
+        return PRESET_MODES[SKU_TO_BASE_DEVICE[self.device.device_type]]
+
     def set_humidity(self, humidity: int) -> None:
         """Set new target humidity."""
         if not self.smarthumidifier.is_on:
             self.smarthumidifier.turn_on()
 
-        if self.smarthumidifier.auto_enabled:
-            self.smarthumidifier.set_humidity(int(humidity))
+        if self.last_known_mode in (FAN_MODE_AUTO, FAN_MODE_SLEEP):
+            self.smarthumidifier.set_humidity(humidity)
         else:
-            self.smarthumidifier.set_mist_level(int(humidity))
-            self.last_known_fan_speed = int(humidity)
+            self.smarthumidifier.set_mist_level(humidity)
+            self.last_known_fan_speed = humidity
 
         self.schedule_update_ha_state()
 
@@ -158,11 +172,16 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
         if mode == FAN_MODE_MANUAL:
             self.smarthumidifier.set_manual_mode()
         elif mode == FAN_MODE_SLEEP:
-            self.smarthumidifier.sleep_mode()
+            self.smarthumidifier.set_humidity_mode("sleep")
+
+        # RECORD THE LAST KNOWN MODE
+        self.last_known_mode = mode
 
         self.schedule_update_ha_state()
 
-    @property
-    def preset_modes(self) -> list[str]:
-        """Get the list of available preset modes."""
-        return PRESET_MODES[SKU_TO_BASE_DEVICE[self.device.device_type]]
+    def get_latest_info(self) -> None:
+        """Get the latest info from the device."""
+        _LOGGER.warning(self.smarthumidifier.displayJSON())
+        self.display_info = json.loads(self.smarthumidifier.displayJSON())
+        self.last_known_mode = self.display_info.get("Mode")
+        self.last_known_fan_speed = int(self.display_info["Mist Virtual Level"])
