@@ -67,8 +67,6 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     humidifers = hass.data[DOMAIN][VS_HUMIDIFIERS] = []
     platforms = []
 
-    _LOGGER.warning(device_dict)
-
     if device_dict[VS_SWITCHES]:
         switches.extend(device_dict[VS_SWITCHES])
         platforms.append(Platform.SWITCH)

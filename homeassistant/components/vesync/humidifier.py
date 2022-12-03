@@ -88,8 +88,6 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
         """Initialize the VeSync humidity device."""
         super().__init__(humidifier)
         self.smarthumidifier = humidifier
-        # get info from json file
-        self.get_latest_info()
 
     @property
     def unique_info(self):
@@ -100,14 +98,12 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
     def target_humidity(self) -> int:
         """Return the desired humidity set point."""
         if self.last_known_mode == FAN_MODE_MANUAL:
-            self.get_latest_info()
             return self.last_known_fan_speed
         return int(self.smarthumidifier.auto_humidity)
 
     @property
     def max_humidity(self) -> int:
         """Return the MAX humidity of this fan."""
-        self.get_latest_info()
         if self.last_known_mode == FAN_MODE_MANUAL:
             return MAX_FAN_SPEED
         return MAX_HUMIDITY
@@ -115,7 +111,6 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
     @property
     def min_humidity(self) -> int:
         """Return the MIN humidity of this fan."""
-        self.get_latest_info()
         if self.last_known_mode == FAN_MODE_MANUAL:
             return MIN_FAN_SPEED
         return MIN_HUMIDITY
@@ -126,7 +121,6 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
         if self.smarthumidifier.auto_enabled:
             return FAN_MODE_AUTO
 
-        self.get_latest_info()
         return self.last_known_mode
 
     @property
@@ -181,6 +175,11 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
 
     def get_latest_info(self) -> None:
         """Get the latest info from the device."""
-        self.display_info = json.loads(self.smarthumidifier.displayJSON())
-        self.last_known_mode = self.display_info.get("Mode")
-        self.last_known_fan_speed = int(self.display_info["Mist Virtual Level"])
+        display_info = json.loads(self.smarthumidifier.displayJSON())
+        self.last_known_mode = display_info.get("Mode")
+        self.last_known_fan_speed = int(display_info["Mist Virtual Level"])
+
+    def update(self) -> None:
+        """Update information from device."""
+        super().update()
+        self.get_latest_info()
