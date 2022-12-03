@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass
+import json
 import logging
 
 from pyvesync.vesyncfan import VeSyncAirBypass, VeSyncHumid200300S
@@ -16,7 +17,6 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .common import VeSyncBaseEntity
@@ -54,12 +54,6 @@ class VeSyncBinarySensorEntityDescription(
     ] = lambda _: None
 
 
-# @property
-# def tank_removed(device) -> bool:
-#     """does stuff"""
-#     return True
-
-
 def sku_supported(device, supported):
     """Get the base device of which a device is an instance."""
     return SKU_TO_BASE_DEVICE.get(device.device_type) in supported
@@ -70,15 +64,22 @@ def ha_dev_type(device):
     return DEV_TYPE_TO_HA.get(device.device_type)
 
 
+WATER_TANK_LIFTED = "water tank lifted"
+WATER_TANK_EMPTY = "water tank empty"
 TANK_LIFTED_SUPPORTED = ["Classic300S"]
 TANK_EMPTY_SUPPORTED = ["Classic300S"]
+
 
 SENSORS: tuple[VeSyncBinarySensorEntityDescription, ...] = (
     VeSyncBinarySensorEntityDescription(
         key="water-tank-lifted",
-        name="water tank lifted",
-        entity_category=EntityCategory.DIAGNOSTIC,
+        name=WATER_TANK_LIFTED,
         exists_fn=lambda device: sku_supported(device, TANK_LIFTED_SUPPORTED),
+    ),
+    VeSyncBinarySensorEntityDescription(
+        key="water-tank-empty",
+        name=WATER_TANK_EMPTY,
+        exists_fn=lambda device: sku_supported(device, TANK_EMPTY_SUPPORTED),
     ),
 )
 
@@ -129,16 +130,22 @@ class VeSyncSensorEntity(VeSyncBaseEntity, BinarySensorEntity):
         self._attr_name = f"{super().name} {description.name}"
         self._attr_unique_id = f"{super().unique_id}-{description.key}"
 
-    # @property
-    # def native_value(self) -> StateType:
-    #     """Return the state of the sensor."""
-    #     return self.entity_description.value_fn(self.device)
-
-    # def update(self) -> None:
-    #     """Run the update function defined for the sensor."""
-    #     return self.entity_description.update_fn(self.device)
+    is_tank_removed = True
+    is_tank_empty = True
 
     @property
     def is_on(self) -> bool | None:
         """Get value of if on."""
+        item_name = str(self.name)
+        if WATER_TANK_LIFTED in item_name:
+            return self.is_tank_removed
+        if WATER_TANK_EMPTY in item_name:
+            return self.is_tank_empty
         return True
+
+    def update(self) -> None:
+        """Update values of sensor."""
+        info = json.loads(self.device.displayJSON())
+        self.is_tank_removed = info.get("Water Tank Lifted")
+        self.is_tank_empty = info.get("Water Lacks")
+        return super().update()

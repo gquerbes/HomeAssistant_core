@@ -86,7 +86,6 @@ SENSORS: tuple[VeSyncSensorEntityDescription, ...] = (
         device_class=SensorDeviceClass.HUMIDITY,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
-        entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda device: device.humidity,
         exists_fn=lambda device: sku_supported(device, HUMIDITY_SUPPORTED),
     ),
