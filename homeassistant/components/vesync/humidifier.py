@@ -33,9 +33,8 @@ FAN_MODE_MANUAL = "manual"
 MAX_HUMIDITY = 100
 MIN_HUMIDITY = 0
 
-MAX_FAN_SPEED = 9  # the max is 3 for dual200s
-MIN_FAN_SPEED = 0
-
+MIN_FAN_SPEED = 1
+MAX_FAN_SPEEDS = {"Classic300S": 9, "Classic200S": 9, "Dual200S": 3}
 
 PRESET_MODES = {
     "Classic300S": [FAN_MODE_AUTO, FAN_MODE_MANUAL, FAN_MODE_SLEEP],
@@ -108,7 +107,7 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
     def max_humidity(self) -> int:
         """Return the MAX humidity of this fan."""
         if self.last_known_mode == FAN_MODE_MANUAL:
-            return MAX_FAN_SPEED
+            return MAX_FAN_SPEEDS[SKU_TO_BASE_DEVICE[self.device.device_type]]
         return MAX_HUMIDITY
 
     @property
@@ -123,7 +122,6 @@ class VeSyncHumidifierHA(VeSyncDevice, HumidifierEntity):
         """Return the mode of this fan."""
         if self.smarthumidifier.auto_enabled:
             return FAN_MODE_AUTO
-
         return self.last_known_mode
 
     @property
