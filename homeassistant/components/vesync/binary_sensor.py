@@ -64,16 +64,16 @@ def ha_dev_type(device):
     return DEV_TYPE_TO_HA.get(device.device_type)
 
 
-WATER_TANK_LIFTED = "water tank lifted"
-WATER_TANK_EMPTY = "water tank empty"
+WATER_TANK_REMOVED = "Water Tank Removed"
+WATER_TANK_EMPTY = "Water Tank Empty"
 TANK_LIFTED_SUPPORTED = ["Classic300S"]
 TANK_EMPTY_SUPPORTED = ["Classic300S"]
 
 
 SENSORS: tuple[VeSyncBinarySensorEntityDescription, ...] = (
     VeSyncBinarySensorEntityDescription(
-        key="water-tank-lifted",
-        name=WATER_TANK_LIFTED,
+        key="water-tank-removed",
+        name=WATER_TANK_REMOVED,
         exists_fn=lambda device: sku_supported(device, TANK_LIFTED_SUPPORTED),
     ),
     VeSyncBinarySensorEntityDescription(
@@ -137,7 +137,7 @@ class VeSyncSensorEntity(VeSyncBaseEntity, BinarySensorEntity):
     def is_on(self) -> bool | None:
         """Get value of if on."""
         item_name = str(self.name)
-        if WATER_TANK_LIFTED in item_name:
+        if WATER_TANK_REMOVED in item_name:
             return self.is_tank_removed
         if WATER_TANK_EMPTY in item_name:
             return self.is_tank_empty
