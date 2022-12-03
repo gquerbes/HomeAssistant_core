@@ -137,7 +137,9 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         new_humidifiers = list(humidifer_set.difference(humidifers))
         if new_humidifiers and humidifers:
             humidifers.extend(new_humidifiers)
-            async_dispatcher_send(hass, VS_DISCOVERY.format(VS_FANS), new_humidifiers)
+            async_dispatcher_send(
+                hass, VS_DISCOVERY.format(VS_HUMIDIFIERS), new_humidifiers
+            )
             return
         if new_humidifiers and not humidifers:
             humidifers.extend(new_humidifiers)

@@ -1,4 +1,5 @@
 """Common utilities for VeSync Component."""
+import json
 import logging
 from typing import Any
 
@@ -10,6 +11,7 @@ from .const import (
     DOMAIN,
     VS_BINARY_SENSORS,
     VS_FANS,
+    VS_HUMIDIFIER_FAN_MODELS,
     VS_HUMIDIFIERS,
     VS_LIGHTS,
     VS_SENSORS,
@@ -33,8 +35,8 @@ async def async_process_devices(hass, manager):
 
     if manager.fans:
         for fan in manager.fans:
-            # WARNING THIS NEEDS A FIX
-            if fan.device_name != "safd":
+            model = json.loads(fan.displayJSON())["Model"]
+            if model in VS_HUMIDIFIER_FAN_MODELS:
                 devices[VS_HUMIDIFIERS].append(fan)
             else:
                 devices[VS_FANS].append(fan)

@@ -22,6 +22,8 @@ DEV_TYPE_TO_HA = {
     "ESO15-TB": "outlet",
 }
 
+VS_HUMIDIFIER_FAN_MODELS = ["Classic300S", "Classic200S"]
+
 SKU_TO_BASE_DEVICE = {
     "LV-PUR131S": "LV-PUR131S",
     "LV-RH131S": "LV-PUR131S",  # Alt ID Model LV-PUR131S
