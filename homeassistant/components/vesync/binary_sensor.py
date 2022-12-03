@@ -20,48 +20,23 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .common import VeSyncBaseEntity
-from .const import (
-    DEV_TYPE_TO_HA,
-    DOMAIN,
-    SKU_TO_BASE_DEVICE,
-    VS_BINARY_SENSORS,
-    VS_DISCOVERY,
-)
+from .const import DOMAIN, SKU_TO_BASE_DEVICE, VS_BINARY_SENSORS, VS_DISCOVERY
 
 _LOGGER = logging.getLogger(__name__)
 
 
 @dataclass
-class VeSyncBinarySensorEntityDescriptionMixin:
-    """Mixin for required keys."""
-
-    # value_fn: Callable[
-    #     [VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch | VeSyncHumid200300S], StateType
-    # ]
-
-
-@dataclass
-class VeSyncBinarySensorEntityDescription(
-    BinarySensorEntityDescription, VeSyncBinarySensorEntityDescriptionMixin
-):
+class VeSyncBinarySensorEntityDescription(BinarySensorEntityDescription):
     """Describe VeSync sensor entity."""
 
     exists_fn: Callable[
         [VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch | VeSyncHumid200300S], bool
     ] = lambda _: True
-    update_fn: Callable[
-        [VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch | VeSyncHumid200300S], None
-    ] = lambda _: None
 
 
 def sku_supported(device, supported):
     """Get the base device of which a device is an instance."""
     return SKU_TO_BASE_DEVICE.get(device.device_type) in supported
-
-
-def ha_dev_type(device):
-    """Get the homeassistant device_type for a given device."""
-    return DEV_TYPE_TO_HA.get(device.device_type)
 
 
 WATER_TANK_REMOVED = "Water Tank Removed"
@@ -89,7 +64,7 @@ async def async_setup_entry(
     config_entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up switches."""
+    """Set up devices."""
 
     @callback
     def discover(devices):
@@ -124,7 +99,7 @@ class VeSyncSensorEntity(VeSyncBaseEntity, BinarySensorEntity):
         device: VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch | VeSyncHumid200300S,
         description: VeSyncBinarySensorEntityDescription,
     ) -> None:
-        """Initialize the VeSync outlet device."""
+        """Initialize the VeSync device."""
         super().__init__(device)
         self.entity_description = description
         self._attr_name = f"{super().name} {description.name}"
