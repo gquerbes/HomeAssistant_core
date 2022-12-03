@@ -22,6 +22,7 @@ _LOGGER = logging.getLogger(__name__)
 DEV_TYPE_TO_HA = {
     "Classic300S": "humidifier",
     "Classic200S": "humidifier",
+    "Dual200S": "humidifier",
 }
 
 
@@ -32,12 +33,14 @@ FAN_MODE_MANUAL = "manual"
 MAX_HUMIDITY = 100
 MIN_HUMIDITY = 0
 
-MAX_FAN_SPEED = 9
+MAX_FAN_SPEED = 9  # the max is 3 for dual200s
 MIN_FAN_SPEED = 0
 
 
 PRESET_MODES = {
     "Classic300S": [FAN_MODE_AUTO, FAN_MODE_MANUAL, FAN_MODE_SLEEP],
+    "Classic200S": [FAN_MODE_AUTO, FAN_MODE_MANUAL],
+    "Dual200S": [FAN_MODE_AUTO, FAN_MODE_MANUAL],
 }
 
 

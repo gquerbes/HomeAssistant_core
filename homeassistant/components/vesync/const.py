@@ -22,7 +22,7 @@ DEV_TYPE_TO_HA = {
     "ESO15-TB": "outlet",
 }
 
-VS_HUMIDIFIER_FAN_MODELS = ["Classic300S", "Classic200S"]
+VS_HUMIDIFIER_FAN_MODELS = ["Classic300S", "Classic200S", "Dual200S"]
 
 SKU_TO_BASE_DEVICE = {
     "LV-PUR131S": "LV-PUR131S",
@@ -41,5 +41,10 @@ SKU_TO_BASE_DEVICE = {
     "LAP-C601S-WUSR": "Core600S",  # Alt ID Model Core600S
     "LAP-C601S-WEU": "Core600S",  # Alt ID Model Core600S
     "Classic300S": "Classic300S",
-    "LUH-A601S-WUSB": "Classic300S",
+    "LUH-A601S-WUSB": "Classic300S",  # Alt ID Model Classic300S
+    "Classic200S": "Classic200S",
+    "Dual200S": "Dual200S",
+    "LUH-D301S-WUSR": "Dual200S",  # Alt ID Model Dual200S
+    "LUH-D301S-WEU": "Dual200S",  # Alt ID Model Dual200S
+    "LUH-D301S-WJP": "Dual200S",  # Alt ID Model Dual200S
 }

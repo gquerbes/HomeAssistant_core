@@ -41,8 +41,8 @@ def sku_supported(device, supported):
 
 WATER_TANK_REMOVED = "Water Tank Removed"
 WATER_TANK_EMPTY = "Water Tank Empty"
-TANK_LIFTED_SUPPORTED = ["Classic300S"]
-TANK_EMPTY_SUPPORTED = ["Classic300S"]
+TANK_LIFTED_SUPPORTED = ["Classic300S", "Classic200S", "Dual200S"]
+TANK_EMPTY_SUPPORTED = ["Classic300S", "Classic200S", "Dual200S"]
 
 
 SENSORS: tuple[VeSyncBinarySensorEntityDescription, ...] = (
