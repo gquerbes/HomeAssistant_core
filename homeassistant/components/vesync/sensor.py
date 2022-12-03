@@ -5,7 +5,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 import logging
 
-from pyvesync.vesyncfan import VeSyncAirBypass
+from pyvesync.vesyncfan import VeSyncAirBypass, VeSyncHumid200300S
 from pyvesync.vesyncoutlet import VeSyncOutlet
 from pyvesync.vesyncswitch import VeSyncSwitch
 
@@ -39,7 +39,9 @@ _LOGGER = logging.getLogger(__name__)
 class VeSyncSensorEntityDescriptionMixin:
     """Mixin for required keys."""
 
-    value_fn: Callable[[VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch], StateType]
+    value_fn: Callable[
+        [VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch | VeSyncHumid200300S], StateType
+    ]
 
 
 @dataclass
@@ -49,10 +51,10 @@ class VeSyncSensorEntityDescription(
     """Describe VeSync sensor entity."""
 
     exists_fn: Callable[
-        [VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch], bool
+        [VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch | VeSyncHumid200300S], bool
     ] = lambda _: True
     update_fn: Callable[
-        [VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch], None
+        [VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch | VeSyncHumid200300S], None
     ] = lambda _: None
 
 
@@ -75,15 +77,25 @@ def ha_dev_type(device):
 FILTER_LIFE_SUPPORTED = ["LV-PUR131S", "Core200S", "Core300S", "Core400S", "Core600S"]
 AIR_QUALITY_SUPPORTED = ["LV-PUR131S", "Core300S", "Core400S", "Core600S"]
 PM25_SUPPORTED = ["Core300S", "Core400S", "Core600S"]
+HUMIDITY_SUPPORTED = ["Classic300S", "Classic200S", "Dual200S"]
 
 SENSORS: tuple[VeSyncSensorEntityDescription, ...] = (
+    VeSyncSensorEntityDescription(
+        key="humidity",
+        name="humidity",
+        device_class=SensorDeviceClass.HUMIDITY,
+        native_unit_of_measurement=PERCENTAGE,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn=lambda device: device.humidity,
+        exists_fn=lambda device: sku_supported(device, HUMIDITY_SUPPORTED),
+    ),
     VeSyncSensorEntityDescription(
         key="filter-life",
         name="Filter Life",
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda device: device.filter_life,
+        value_fn=lambda device: device.h,
         exists_fn=lambda device: sku_supported(device, FILTER_LIFE_SUPPORTED),
     ),
     VeSyncSensorEntityDescription(
@@ -201,7 +213,7 @@ class VeSyncSensorEntity(VeSyncBaseEntity, SensorEntity):
 
     def __init__(
         self,
-        device: VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch,
+        device: VeSyncAirBypass | VeSyncOutlet | VeSyncSwitch | VeSyncHumid200300S,
         description: VeSyncSensorEntityDescription,
     ) -> None:
         """Initialize the VeSync outlet device."""

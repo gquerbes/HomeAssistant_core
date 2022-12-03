@@ -1,4 +1,5 @@
 """Common utilities for VeSync Component."""
+import json
 import logging
 from typing import Any
 
@@ -6,7 +7,16 @@ from pyvesync.vesyncbasedevice import VeSyncBaseDevice
 
 from homeassistant.helpers.entity import DeviceInfo, Entity, ToggleEntity
 
-from .const import DOMAIN, VS_FANS, VS_LIGHTS, VS_SENSORS, VS_SWITCHES
+from .const import (
+    DOMAIN,
+    VS_BINARY_SENSORS,
+    VS_FANS,
+    VS_HUMIDIFIER_FAN_MODELS,
+    VS_HUMIDIFIERS,
+    VS_LIGHTS,
+    VS_SENSORS,
+    VS_SWITCHES,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -18,13 +28,21 @@ async def async_process_devices(hass, manager):
     devices[VS_FANS] = []
     devices[VS_LIGHTS] = []
     devices[VS_SENSORS] = []
+    devices[VS_HUMIDIFIERS] = []
+    devices[VS_BINARY_SENSORS] = []
 
     await hass.async_add_executor_job(manager.update)
 
     if manager.fans:
-        devices[VS_FANS].extend(manager.fans)
+        for fan in manager.fans:
+            model = json.loads(fan.displayJSON())["Model"]
+            if model in VS_HUMIDIFIER_FAN_MODELS:
+                devices[VS_HUMIDIFIERS].append(fan)
+            else:
+                devices[VS_FANS].append(fan)
         # Expose fan sensors separately
         devices[VS_SENSORS].extend(manager.fans)
+        devices[VS_BINARY_SENSORS].extend(manager.fans)
         _LOGGER.info("%d VeSync fans found", len(manager.fans))
 
     if manager.bulbs:
@@ -110,3 +128,7 @@ class VeSyncDevice(VeSyncBaseEntity, ToggleEntity):
     def turn_off(self, **kwargs: Any) -> None:
         """Turn the device off."""
         self.device.turn_off()
+
+    def turn_on(self, **kwargs: Any) -> None:
+        """Turn the device off."""
+        self.device.turn_on()

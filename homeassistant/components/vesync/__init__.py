@@ -13,15 +13,24 @@ from .common import async_process_devices
 from .const import (
     DOMAIN,
     SERVICE_UPDATE_DEVS,
+    VS_BINARY_SENSORS,
     VS_DISCOVERY,
     VS_FANS,
+    VS_HUMIDIFIERS,
     VS_LIGHTS,
     VS_MANAGER,
     VS_SENSORS,
     VS_SWITCHES,
 )
 
-PLATFORMS = [Platform.FAN, Platform.LIGHT, Platform.SENSOR, Platform.SWITCH]
+PLATFORMS = [
+    Platform.FAN,
+    Platform.LIGHT,
+    Platform.SENSOR,
+    Platform.SWITCH,
+    Platform.HUMIDIFIER,
+    Platform.BINARY_SENSOR,
+]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,6 +63,8 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
     fans = hass.data[DOMAIN][VS_FANS] = []
     lights = hass.data[DOMAIN][VS_LIGHTS] = []
     sensors = hass.data[DOMAIN][VS_SENSORS] = []
+    binary_sensors = hass.data[DOMAIN][VS_BINARY_SENSORS] = []
+    humidifers = hass.data[DOMAIN][VS_HUMIDIFIERS] = []
     platforms = []
 
     if device_dict[VS_SWITCHES]:
@@ -72,6 +83,14 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         sensors.extend(device_dict[VS_SENSORS])
         platforms.append(Platform.SENSOR)
 
+    if device_dict[VS_BINARY_SENSORS]:
+        binary_sensors.extend(device_dict[VS_BINARY_SENSORS])
+        platforms.append(Platform.BINARY_SENSOR)
+
+    if device_dict[VS_HUMIDIFIERS]:
+        humidifers.extend(device_dict[VS_HUMIDIFIERS])
+        platforms.append(Platform.HUMIDIFIER)
+
     await hass.config_entries.async_forward_entry_setups(config_entry, platforms)
 
     async def async_new_device_discovery(service: ServiceCall) -> None:
@@ -79,14 +98,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         manager = hass.data[DOMAIN][VS_MANAGER]
         switches = hass.data[DOMAIN][VS_SWITCHES]
         fans = hass.data[DOMAIN][VS_FANS]
+        humidifers = hass.data[DOMAIN][VS_HUMIDIFIERS]
         lights = hass.data[DOMAIN][VS_LIGHTS]
         sensors = hass.data[DOMAIN][VS_SENSORS]
+        binary_sensors = hass.data[DOMAIN][VS_BINARY_SENSORS]
 
         dev_dict = await async_process_devices(hass, manager)
         switch_devs = dev_dict.get(VS_SWITCHES, [])
         fan_devs = dev_dict.get(VS_FANS, [])
+        humidifer_devs = dev_dict.get(VS_FANS, [])
         light_devs = dev_dict.get(VS_LIGHTS, [])
         sensor_devs = dev_dict.get(VS_SENSORS, [])
+        binary_sensor_devs = dev_dict.get(VS_BINARY_SENSORS, [])
 
         switch_set = set(switch_devs)
         new_switches = list(switch_set.difference(switches))
@@ -108,6 +131,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
             fans.extend(new_fans)
             hass.async_create_task(forward_setup(config_entry, Platform.FAN))
 
+        humidifer_set = set(humidifer_devs)
+        new_humidifiers = list(humidifer_set.difference(humidifers))
+        if new_humidifiers and humidifers:
+            humidifers.extend(new_humidifiers)
+            async_dispatcher_send(
+                hass, VS_DISCOVERY.format(VS_HUMIDIFIERS), new_humidifiers
+            )
+            return
+        if new_humidifiers and not humidifers:
+            humidifers.extend(new_humidifiers)
+            hass.async_create_task(forward_setup(config_entry, Platform.HUMIDIFIER))
+
         light_set = set(light_devs)
         new_lights = list(light_set.difference(lights))
         if new_lights and lights:
@@ -127,6 +162,18 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry) -> b
         if new_sensors and not sensors:
             sensors.extend(new_sensors)
             hass.async_create_task(forward_setup(config_entry, Platform.SENSOR))
+
+        binary_sensor_set = set(binary_sensor_devs)
+        new_binary_sensors = list(binary_sensor_set.difference(binary_sensors))
+        if new_binary_sensors and binary_sensors:
+            binary_sensors.extend(new_binary_sensors)
+            async_dispatcher_send(
+                hass, VS_DISCOVERY.format(VS_BINARY_SENSORS), new_binary_sensors
+            )
+            return
+        if new_binary_sensors and not binary_sensors:
+            binary_sensors.extend(new_binary_sensors)
+            hass.async_create_task(forward_setup(config_entry, Platform.BINARY_SENSOR))
 
     hass.services.async_register(
         DOMAIN, SERVICE_UPDATE_DEVS, async_new_device_discovery
